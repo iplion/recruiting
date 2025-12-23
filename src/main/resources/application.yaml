@@ -1,3 +1,6 @@
+logging:
+  level:
+    org.springframework.security: TRACE
 db-schema: recruiting
 spring:
   application:
@@ -16,3 +19,12 @@ spring:
         format_sql: true
         show_sql: true
     open-in-view: false
+security:
+  jwt:
+    secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32+_CHARS_MINIMUM"
+    ttlMinutes: 60
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  default-chat-id: ${TELEGRAM_CHAT_ID:}
+app:
+  candidate-portal-base-url: ${CANDIDATE_PORTAL_BASE_URL:http://localhost}

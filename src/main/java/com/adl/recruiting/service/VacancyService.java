@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.adl.recruiting.dto.ChangeVacancyStatusRequest;
 import com.adl.recruiting.dto.CreateVacancyRequest;
 import com.adl.recruiting.dto.VacancyResponse;
+import com.adl.recruiting.dto.UpdateVacancyRequest;
 import com.adl.recruiting.entity.Vacancy;
 import com.adl.recruiting.entity.VacancyStatus;
 import com.adl.recruiting.repository.VacancyRepository;
@@ -35,6 +36,18 @@ public class VacancyService {
             ? vacancyRepository.findAll()
             : vacancyRepository.findAllByStatus(status);
         return vacancies.stream().map(this::toResponse).toList();
+    }
+
+    @Transactional
+    public VacancyResponse update(long id, UpdateVacancyRequest req) {
+        Vacancy v = vacancyRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Vacancy not found: " + id));
+
+        v.setTitle(req.title());
+        v.setLevel(req.level());
+        v.setStatus(req.status());
+
+        return toResponse(v);
     }
 
     @Transactional
