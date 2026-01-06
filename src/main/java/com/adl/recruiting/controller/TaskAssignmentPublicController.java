@@ -1,7 +1,7 @@
 package com.adl.recruiting.controller;
 
-import com.adl.recruiting.dto.AssignmentResponse;
-import com.adl.recruiting.dto.SubmitSolutionRequest;
+import com.adl.recruiting.dto.AssignmentResponseDto;
+import com.adl.recruiting.dto.SubmitSolutionRequestDto;
 import com.adl.recruiting.service.TaskAssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +20,10 @@ public class TaskAssignmentPublicController {
     private final TaskAssignmentService taskAssignmentService;
 
     @PatchMapping("/{id}/submit")
-    public AssignmentResponse submit(
+    public AssignmentResponseDto submit(
         @PathVariable("id") long id,
         @RequestParam("token") String token,
-        @Valid @RequestBody SubmitSolutionRequest body
+        @Valid @RequestBody SubmitSolutionRequestDto body
     ) {
         return taskAssignmentService.submitByToken(id, token, body);
     }

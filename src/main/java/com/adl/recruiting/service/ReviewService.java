@@ -1,7 +1,7 @@
 package com.adl.recruiting.service;
 
-import com.adl.recruiting.dto.CreateReviewRequest;
-import com.adl.recruiting.dto.ReviewResponse;
+import com.adl.recruiting.dto.CreateReviewRequestDto;
+import com.adl.recruiting.dto.ReviewResponseDto;
 import com.adl.recruiting.entity.Candidate;
 import com.adl.recruiting.entity.CandidateStatus;
 import com.adl.recruiting.entity.Review;
@@ -11,12 +11,13 @@ import com.adl.recruiting.entity.Vacancy;
 import com.adl.recruiting.repository.CandidateRepository;
 import com.adl.recruiting.repository.CandidateStatusRepository;
 import com.adl.recruiting.repository.ReviewRepository;
-import com.adl.recruiting.repository.UserRepository;
 import com.adl.recruiting.repository.VacancyRepository;
-import java.util.List;
+import com.adl.recruiting.util.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,17 +25,17 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final CandidateRepository candidateRepository;
-    private final UserRepository userRepository;
     private final VacancyRepository vacancyRepository;
     private final CandidateStatusRepository candidateStatusRepository;
+    private final AuthUtils authUtils;
+    private final TelegramNotificationService telegramNotificationService;
 
     @Transactional
-    public ReviewResponse create(CreateReviewRequest req) {
+    public ReviewResponseDto create(CreateReviewRequestDto req) {
         Candidate candidate = candidateRepository.findById(req.candidateId())
             .orElseThrow(() -> new IllegalArgumentException("Candidate not found: " + req.candidateId()));
 
-        User reviewer = userRepository.findById(req.reviewerId())
-            .orElseThrow(() -> new IllegalArgumentException("User not found: " + req.reviewerId()));
+        User reviewer = authUtils.resolveCurrentUser();
 
         Vacancy recommendedVacancy = null;
         if (req.recommendedVacancyId() != null) {
@@ -54,38 +55,73 @@ public class ReviewService {
 
         applyCandidateStatusByReviewerAndDecision(candidate, reviewer, req.decision());
 
+        CandidateStatus newStatus = candidate.getStatus();
+        String status = (newStatus == null) ? null : newStatus.getName();
+        String candidateLabel = candidate.getFullName() + " (id=" + candidate.getId() + ")";
+
+        if ("pm_review".equals(status)) {
+            telegramNotificationService.notifyRole("pm",
+                "Требуется проектная оценка кандидата.\nКандидат: " + candidateLabel);
+        }
+
+        if ("director_review".equals(status)) {
+            telegramNotificationService.notifyRole("director",
+                "Требуется финальное решение директора.\nКандидат: " + candidateLabel);
+        }
+
+        if ("invited".equals(status) || "rejected".equals(status) || "paused".equals(status)) {
+            String msg;
+            switch (status) {
+                case "invited" -> msg = "Спасибо! Мы готовы пригласить вас на следующий этап. Мы свяжемся с вами.";
+                case "rejected" -> msg = "Спасибо за участие. К сожалению, сейчас мы не готовы продолжить процесс.";
+                case "paused" -> msg = "Процесс временно приостановлен. Мы вернёмся с обновлениями позже.";
+                default -> msg = "Статус обновлён: " + status;
+            }
+            telegramNotificationService.notifyCandidate(candidate, msg);
+        }
+
         return toResponse(r);
     }
 
     @Transactional(readOnly = true)
-    public List<ReviewResponse> listByCandidate(long candidateId) {
-        return reviewRepository.findAllByCandidateIdOrderByCreatedAtDesc(candidateId).stream()
+    public List<ReviewResponseDto> listByCandidate(long candidateId) {
+        return reviewRepository.findByCandidateIdWithReviewer(candidateId).stream()
             .map(this::toResponse)
             .toList();
     }
 
     private void applyCandidateStatusByReviewerAndDecision(Candidate candidate, User reviewer, ReviewDecision decision) {
-        String role = reviewer.getRole().getName();
+        String role = reviewer.getRole() != null ? reviewer.getRole().getName() : null;
+        if (role == null) {
+            throw new IllegalArgumentException("Reviewer role is null");
+        }
 
-        if ("teamlead".equals(role)) {
-            setCandidateStatus(candidate, "tech_review");
+        if ("teamlead".equalsIgnoreCase(role)) {
+            switch (decision) {
+                case RECOMMEND -> setCandidateStatus(candidate, "pm_review");
+                case NOT_RECOMMEND, REJECT -> setCandidateStatus(candidate, "rejected");
+                case PAUSE -> setCandidateStatus(candidate, "paused");
+                default -> setCandidateStatus(candidate, "tech_review");
+            }
             return;
         }
 
-        if ("pm".equals(role)) {
-            setCandidateStatus(candidate, "pm_review");
+        if ("pm".equalsIgnoreCase(role)) {
+            switch (decision) {
+                case RECOMMEND -> setCandidateStatus(candidate, "director_review");
+                case NOT_RECOMMEND, REJECT -> setCandidateStatus(candidate, "rejected");
+                case PAUSE -> setCandidateStatus(candidate, "paused");
+                default -> setCandidateStatus(candidate, "pm_review");
+            }
             return;
         }
 
-        if ("director".equals(role)) {
-            if (decision == ReviewDecision.INVITE) {
-                setCandidateStatus(candidate, "invited");
-            } else if (decision == ReviewDecision.REJECT) {
-                setCandidateStatus(candidate, "rejected");
-            } else if (decision == ReviewDecision.PAUSE) {
-                setCandidateStatus(candidate, "paused");
-            } else {
-                setCandidateStatus(candidate, "director_review");
+        if ("director".equalsIgnoreCase(role)) {
+            switch (decision) {
+                case INVITE -> setCandidateStatus(candidate, "invited");
+                case REJECT, NOT_RECOMMEND -> setCandidateStatus(candidate, "rejected");
+                case PAUSE -> setCandidateStatus(candidate, "paused");
+                default -> setCandidateStatus(candidate, "director_review");
             }
             return;
         }
@@ -99,16 +135,27 @@ public class ReviewService {
         candidate.setStatus(s);
     }
 
-    private ReviewResponse toResponse(Review r) {
+    private ReviewResponseDto toResponse(Review r) {
         Long vacancyId = (r.getRecommendedVacancy() == null) ? null : r.getRecommendedVacancy().getId();
-        String reviewerRole = (r.getReviewer() == null || r.getReviewer().getRole() == null)
-            ? null
-            : r.getReviewer().getRole().getName();
 
-        return new ReviewResponse(
+        User reviewer = r.getReviewer();
+        if (reviewer == null) {
+            throw new IllegalStateException("Reviewer is null for review id=" + r.getId());
+        }
+
+        String reviewerRole = reviewer.getRole() == null
+            ? null
+            : reviewer.getRole().getName();
+
+        String reviewerName = reviewer.getFullName();
+        if (reviewerName == null || reviewerName.isBlank()) {
+            reviewerName = reviewer.getLogin();
+        }
+        return new ReviewResponseDto(
             r.getId(),
             r.getCandidate().getId(),
-            r.getReviewer().getId(),
+            reviewer.getId(),
+            reviewerName,
             reviewerRole,
             vacancyId,
             r.getScore(),

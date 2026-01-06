@@ -1,6 +1,6 @@
 package com.adl.recruiting.dto;
 
-public record TestTaskResponse(
+public record TestTaskResponseDto(
     Long id,
     String title,
     String description,

@@ -1,6 +1,7 @@
 package com.adl.recruiting.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.Map;
 
 @Service
 public class JwtService {
@@ -27,12 +27,13 @@ public class JwtService {
         this.ttlMinutes = ttlMinutes;
     }
 
+    /** staff access token */
     public String generate(UserDetails user) {
         Instant now = Instant.now();
         Instant exp = now.plus(ttlMinutes, ChronoUnit.MINUTES);
 
         return Jwts.builder()
-            .claims(Map.of())
+            .claim("typ", "staff")
             .subject(user.getUsername())
             .issuedAt(Date.from(now))
             .expiration(Date.from(exp))
@@ -45,13 +46,16 @@ public class JwtService {
     }
 
     public boolean isValid(String token, UserDetails user) {
-        String username = extractUsername(token);
-        return username.equals(user.getUsername()) && !isExpired(token);
+        return user.getUsername().equals(extractUsername(token)) && !isExpired(token);
+    }
+
+    public boolean isStaffToken(String token) {
+        return "staff".equals(String.valueOf(parseClaims(token).get("typ")));
     }
 
     private boolean isExpired(String token) {
         Date exp = parseClaims(token).getExpiration();
-        return exp.before(new Date());
+        return exp != null && exp.before(new Date());
     }
 
     private Claims parseClaims(String token) {

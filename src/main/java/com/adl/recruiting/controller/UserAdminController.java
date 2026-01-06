@@ -1,7 +1,7 @@
 package com.adl.recruiting.controller;
 
-import com.adl.recruiting.dto.CreateUserRequest;
-import com.adl.recruiting.dto.UserResponse;
+import com.adl.recruiting.dto.CreateUserRequestDto;
+import com.adl.recruiting.dto.UserResponseDto;
 import com.adl.recruiting.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -23,17 +23,17 @@ public class UserAdminController {
     private final UserService userService;
 
     @PostMapping
-    public UserResponse create(@Valid @RequestBody CreateUserRequest req) {
+    public UserResponseDto create(@Valid @RequestBody CreateUserRequestDto req) {
         return userService.create(req);
     }
 
     @GetMapping
-    public List<UserResponse> list() {
+    public List<UserResponseDto> list() {
         return userService.list();
     }
 
     @GetMapping("/{id}")
-    public UserResponse getById(@PathVariable long id) {
+    public UserResponseDto getById(@PathVariable long id) {
         return userService.getById(id);
     }
 }

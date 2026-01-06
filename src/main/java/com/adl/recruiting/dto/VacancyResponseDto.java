@@ -2,7 +2,7 @@ package com.adl.recruiting.dto;
 
 import com.adl.recruiting.entity.VacancyStatus;
 
-public record VacancyResponse(
+public record VacancyResponseDto(
     Long id,
     String title,
     String level,

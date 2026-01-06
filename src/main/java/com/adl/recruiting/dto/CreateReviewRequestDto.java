@@ -4,9 +4,8 @@ import com.adl.recruiting.entity.ReviewDecision;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record CreateReviewRequest(
+public record CreateReviewRequestDto(
     @NotNull Long candidateId,
-    @NotNull Long reviewerId,
     Long recommendedVacancyId,
     Integer score,
     @NotNull ReviewDecision decision,

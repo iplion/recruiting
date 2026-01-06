@@ -3,15 +3,19 @@ package com.adl.recruiting.service;
 import com.adl.recruiting.entity.Candidate;
 import com.adl.recruiting.entity.User;
 import com.adl.recruiting.integration.TelegramClient;
+import com.adl.recruiting.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class TelegramNotificationService {
 
     private final TelegramClient telegramClient;
+    private final UserRepository userRepository;
 
     @Value("${telegram.bot-token:}")
     private String botToken;
@@ -22,6 +26,7 @@ public class TelegramNotificationService {
     public void notify(Long chatId, String message) {
         Long target = (chatId != null) ? chatId : defaultChatId;
         if (target == null) return;
+        if (botToken == null || botToken.isBlank()) return;
         telegramClient.sendMessage(botToken, target, message);
     }
 
@@ -39,5 +44,19 @@ public class TelegramNotificationService {
             return;
         }
         notify(candidate.getTelegramChatId(), message);
+    }
+
+    public void notifyRole(String roleName, String message) {
+        if (roleName == null || roleName.isBlank()) return;
+
+        List<User> users = userRepository.findAllByRole_NameAndTelegramChatIdNotNull(roleName);
+        if (users.isEmpty()) {
+            notify((Long) null, message);
+            return;
+        }
+
+        for (User u : users) {
+            notifyUser(u, message);
+        }
     }
 }

@@ -3,8 +3,6 @@ package com.adl.recruiting.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import com.adl.recruiting.dto.ChangeVacancyStatusRequest;
-import com.adl.recruiting.dto.CreateVacancyRequest;
-import com.adl.recruiting.dto.UpdateVacancyRequest;
-import com.adl.recruiting.dto.VacancyResponse;
+import com.adl.recruiting.dto.ChangeVacancyStatusRequestDto;
+import com.adl.recruiting.dto.CreateVacancyRequestDto;
+import com.adl.recruiting.dto.UpdateVacancyRequestDto;
+import com.adl.recruiting.dto.VacancyResponseDto;
 import com.adl.recruiting.entity.VacancyStatus;
 import com.adl.recruiting.service.VacancyService;
 
@@ -32,27 +30,27 @@ public class VacancyAdminController {
 
     @PreAuthorize("hasRole('DIRECTOR')")
     @PostMapping
-    public VacancyResponse create(@Valid @RequestBody CreateVacancyRequest req) {
+    public VacancyResponseDto create(@Valid @RequestBody CreateVacancyRequestDto req) {
         return vacancyService.create(req);
     }
 
     @PreAuthorize("hasAnyRole('DIRECTOR','TEAMLEAD','PM')")
     @GetMapping
-    public List<VacancyResponse> list(@RequestParam(required = false) VacancyStatus status) {
+    public List<VacancyResponseDto> list(@RequestParam(required = false) VacancyStatus status) {
         return vacancyService.list(status);
     }
 
     @PreAuthorize("hasRole('DIRECTOR')")
     @PutMapping("/{id}")
-    public VacancyResponse putUpdate(@PathVariable long id,
-                                     @Valid @RequestBody UpdateVacancyRequest req) {
+    public VacancyResponseDto putUpdate(@PathVariable long id,
+                                        @Valid @RequestBody UpdateVacancyRequestDto req) {
         return vacancyService.update(id, req);
     }
 
     @PreAuthorize("hasAnyRole('DIRECTOR','TEAMLEAD','PM')")
     @PatchMapping("/{id}/status")
-    public VacancyResponse changeStatus(@PathVariable long id,
-                                        @Valid @RequestBody ChangeVacancyStatusRequest req) {
+    public VacancyResponseDto changeStatus(@PathVariable long id,
+                                           @Valid @RequestBody ChangeVacancyStatusRequestDto req) {
         return vacancyService.changeStatus(id, req);
     }
 }

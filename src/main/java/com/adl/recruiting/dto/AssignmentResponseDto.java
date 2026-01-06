@@ -1,10 +1,10 @@
 package com.adl.recruiting.dto;
 
-public record AssignmentResponse(
+public record AssignmentResponseDto(
     Long id,
     Long candidateId,
     Long taskId,
-    Long assignedByUserId,
+    String assignedByName,
     String status,
     String solutionLink,
     String solutionText

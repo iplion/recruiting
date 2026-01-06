@@ -2,8 +2,7 @@ package com.adl.recruiting.dto;
 
 import jakarta.validation.constraints.NotNull;
 
-public record CreateAssignmentRequest(
+public record CreateAssignmentRequestDto(
     @NotNull Long candidateId,
-    @NotNull Long taskId,
-    @NotNull Long assignedByUserId
+    @NotNull Long taskId
 ) {}

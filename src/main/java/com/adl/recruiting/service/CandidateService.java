@@ -4,11 +4,12 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.adl.recruiting.dto.CandidateResponse;
-import com.adl.recruiting.dto.ChangeCandidateStatusRequest;
-import com.adl.recruiting.dto.CreateCandidateRequest;
+import com.adl.recruiting.dto.CandidateResponseDto;
+import com.adl.recruiting.dto.ChangeCandidateStatusRequestDto;
+import com.adl.recruiting.dto.CreateCandidateRequestDto;
 import com.adl.recruiting.entity.Candidate;
 import com.adl.recruiting.entity.CandidateStatus;
 import com.adl.recruiting.entity.Vacancy;
@@ -26,8 +27,11 @@ public class CandidateService {
     private final CandidateStatusRepository candidateStatusRepository;
     private final VacancyRepository vacancyRepository;
 
+    @Value("${telegram.bot-username:}")
+    private String botUsername;
+
     @Transactional
-    public CandidateResponse create(CreateCandidateRequest req) {
+    public CandidateResponseDto create(CreateCandidateRequestDto req) {
         CandidateStatus status = candidateStatusRepository.findByName(STATUS_NEW)
             .orElseThrow(() -> new IllegalStateException("Candidate status not found in DB: " + STATUS_NEW));
 
@@ -47,23 +51,25 @@ public class CandidateService {
         c.setPlannedVacancy(plannedVacancy);
 
         c = candidateRepository.save(c);
+
+
         return toResponse(c);
     }
 
     @Transactional(readOnly = true)
-    public CandidateResponse getById(long id) {
+    public CandidateResponseDto getById(long id) {
         Candidate c = candidateRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Candidate not found: " + id));
         return toResponse(c);
     }
 
     @Transactional(readOnly = true)
-    public List<CandidateResponse> list() {
+    public List<CandidateResponseDto> list() {
         return candidateRepository.findAll().stream().map(this::toResponse).toList();
     }
 
     @Transactional
-    public CandidateResponse changeStatus(long id, ChangeCandidateStatusRequest req) {
+    public CandidateResponseDto changeStatus(long id, ChangeCandidateStatusRequestDto req) {
         Candidate c = candidateRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Candidate not found: " + id));
 
@@ -74,19 +80,23 @@ public class CandidateService {
         return toResponse(c);
     }
 
-    private CandidateResponse toResponse(Candidate c) {
+    private CandidateResponseDto toResponse(Candidate c) {
         Long vacancyId = (c.getPlannedVacancy() == null) ? null : c.getPlannedVacancy().getId();
         String statusName = (c.getStatus() == null) ? null : c.getStatus().getName();
+        String tgLink = null;
+        if (botUsername != null && !botUsername.isBlank() && c.getAccessToken() != null) {
+            tgLink = "https://t.me/" + botUsername + "?start=" + c.getAccessToken();
+        }
 
-        return new CandidateResponse(
+        return new CandidateResponseDto(
             c.getId(),
-            c.getAccessToken(),
             c.getTokenExpiresAt(),
             c.getFullName(),
             c.getContacts(),
             c.getExperience(),
             statusName,
-            vacancyId
+            vacancyId,
+            tgLink
         );
     }
 }

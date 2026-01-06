@@ -1,6 +1,6 @@
 package com.adl.recruiting.dto;
 
-public record UserResponse(
+public record UserResponseDto(
     Long id,
     String fullName,
     String login,

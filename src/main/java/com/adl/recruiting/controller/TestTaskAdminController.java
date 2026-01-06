@@ -1,7 +1,7 @@
 package com.adl.recruiting.controller;
 
-import com.adl.recruiting.dto.CreateTestTaskRequest;
-import com.adl.recruiting.dto.TestTaskResponse;
+import com.adl.recruiting.dto.CreateTestTaskRequestDto;
+import com.adl.recruiting.dto.TestTaskResponseDto;
 import com.adl.recruiting.service.TestTaskService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -22,12 +22,12 @@ public class TestTaskAdminController {
     private final TestTaskService testTaskService;
 
     @PostMapping
-    public TestTaskResponse create(@Valid @RequestBody CreateTestTaskRequest req) {
+    public TestTaskResponseDto create(@Valid @RequestBody CreateTestTaskRequestDto req) {
         return testTaskService.create(req);
     }
 
     @GetMapping
-    public List<TestTaskResponse> list() {
+    public List<TestTaskResponseDto> list() {
         return testTaskService.list();
     }
 }

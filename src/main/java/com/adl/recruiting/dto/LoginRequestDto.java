@@ -2,7 +2,7 @@ package com.adl.recruiting.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record LoginRequest(
+public record LoginRequestDto(
     @NotBlank String login,
     @NotBlank String password
 ) {}

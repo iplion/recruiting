@@ -1,12 +1,14 @@
 package com.adl.recruiting.service;
 
-import com.adl.recruiting.dto.CreateUserRequest;
-import com.adl.recruiting.dto.UserResponse;
+import com.adl.recruiting.dto.CreateUserRequestDto;
+import com.adl.recruiting.dto.UserResponseDto;
 import com.adl.recruiting.entity.Role;
 import com.adl.recruiting.entity.User;
+import com.adl.recruiting.exception.NotFoundException;
 import com.adl.recruiting.repository.RoleRepository;
 import com.adl.recruiting.repository.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,13 +23,20 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserResponse create(CreateUserRequest req) {
-        Role role = roleRepository.findByName(req.role())
-            .orElseThrow(() -> new IllegalArgumentException("Role not found: " + req.role()));
+    public UserResponseDto create(CreateUserRequestDto req) {
+        String login = req.login().trim();
+
+        if (userRepository.findByLogin(login).isPresent()) {
+            throw new IllegalStateException("Login already exists: " + login); // 409
+        }
+
+        String roleName = req.role().trim().toLowerCase(Locale.ROOT);
+        Role role = roleRepository.findByName(roleName)
+            .orElseThrow(() -> new IllegalArgumentException("Role not found: " + req.role())); // 400
 
         User u = new User();
         u.setFullName(req.fullName());
-        u.setLogin(req.login());
+        u.setLogin(login);
         u.setPasswordHash(passwordEncoder.encode(req.password()));
         u.setRole(role);
 
@@ -36,18 +45,18 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse getById(long id) {
+    public UserResponseDto getById(long id) {
         User u = userRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+            .orElseThrow(() -> new NotFoundException("User not found: " + id)); // 404
         return toResponse(u);
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponse> list() {
+    public List<UserResponseDto> list() {
         return userRepository.findAll().stream().map(this::toResponse).toList();
     }
 
-    private UserResponse toResponse(User u) {
-        return new UserResponse(u.getId(), u.getFullName(), u.getLogin(), u.getRole().getName());
+    private UserResponseDto toResponse(User u) {
+        return new UserResponseDto(u.getId(), u.getFullName(), u.getLogin(), u.getRole().getName());
     }
 }

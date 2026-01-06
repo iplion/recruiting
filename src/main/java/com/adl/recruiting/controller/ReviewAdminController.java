@@ -1,12 +1,13 @@
 package com.adl.recruiting.controller;
 
-import com.adl.recruiting.dto.CreateReviewRequest;
-import com.adl.recruiting.dto.ReviewResponse;
+import com.adl.recruiting.dto.CreateReviewRequestDto;
+import com.adl.recruiting.dto.ReviewResponseDto;
 import com.adl.recruiting.service.ReviewService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,12 +24,13 @@ public class ReviewAdminController {
     private final ReviewService reviewService;
 
     @PostMapping
-    public ReviewResponse create(@Valid @RequestBody CreateReviewRequest req) {
+    public ReviewResponseDto create(@Valid @RequestBody CreateReviewRequestDto req,
+                                    Authentication authentication) {
         return reviewService.create(req);
     }
 
     @GetMapping
-    public List<ReviewResponse> listByCandidate(@RequestParam("candidateId") long candidateId) {
+    public List<ReviewResponseDto> listByCandidate(@RequestParam("candidateId") long candidateId) {
         return reviewService.listByCandidate(candidateId);
     }
 }

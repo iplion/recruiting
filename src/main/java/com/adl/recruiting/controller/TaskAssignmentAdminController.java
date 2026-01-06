@@ -1,7 +1,7 @@
 package com.adl.recruiting.controller;
 
-import com.adl.recruiting.dto.AssignmentResponse;
-import com.adl.recruiting.dto.CreateAssignmentRequest;
+import com.adl.recruiting.dto.AssignmentResponseDto;
+import com.adl.recruiting.dto.CreateAssignmentRequestDto;
 import com.adl.recruiting.service.TaskAssignmentService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -25,18 +25,17 @@ public class TaskAssignmentAdminController {
     private final TaskAssignmentService taskAssignmentService;
 
     @PostMapping
-    public AssignmentResponse assign(@Valid @RequestBody CreateAssignmentRequest req) {
+    public AssignmentResponseDto assign(@Valid @RequestBody CreateAssignmentRequestDto req) {
         return taskAssignmentService.assign(req);
     }
 
     @GetMapping
-    public List<AssignmentResponse> listByCandidate(@RequestParam("candidateId") long candidateId) {
+    public List<AssignmentResponseDto> listByCandidate(@RequestParam("candidateId") long candidateId) {
         return taskAssignmentService.listByCandidate(candidateId);
     }
 
     @PatchMapping("/{id}/reviewed")
-    public AssignmentResponse reviewed(@PathVariable("id") long id) {
+    public AssignmentResponseDto reviewed(@PathVariable("id") long id) {
         return taskAssignmentService.markReviewed(id);
     }
-
 }

@@ -25,6 +25,8 @@ security:
     ttlMinutes: 60
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
+  bot-username: ${TELEGRAM_BOT_USERNAME:}
   default-chat-id: ${TELEGRAM_CHAT_ID:}
+  webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:change-me}
 app:
-  candidate-portal-base-url: ${CANDIDATE_PORTAL_BASE_URL:http://localhost}
+  candidate-portal-base-url: ${CANDIDATE_PORTAL_BASE_URL:http://localhost:5173}

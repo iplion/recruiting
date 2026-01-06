@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.adl.recruiting.dto.CandidateResponse;
-import com.adl.recruiting.dto.ChangeCandidateStatusRequest;
-import com.adl.recruiting.dto.CreateCandidateRequest;
+import com.adl.recruiting.dto.CandidateResponseDto;
+import com.adl.recruiting.dto.ChangeCandidateStatusRequestDto;
+import com.adl.recruiting.dto.CreateCandidateRequestDto;
 import com.adl.recruiting.service.CandidateService;
 
 @RestController
@@ -26,23 +26,23 @@ public class CandidateAdminController {
 
     @PreAuthorize("hasRole('DIRECTOR')")
     @PostMapping
-    public CandidateResponse create(@Valid @RequestBody CreateCandidateRequest req) {
+    public CandidateResponseDto create(@Valid @RequestBody CreateCandidateRequestDto req) {
         return candidateService.create(req);
     }
 
     @GetMapping
-    public List<CandidateResponse> list() {
+    public List<CandidateResponseDto> list() {
         return candidateService.list();
     }
 
     @GetMapping("/{id}")
-    public CandidateResponse getById(@PathVariable long id) {
+    public CandidateResponseDto getById(@PathVariable long id) {
         return candidateService.getById(id);
     }
 
     @PatchMapping("/{id}/status")
-    public CandidateResponse changeStatus(@PathVariable long id,
-                                          @Valid @RequestBody ChangeCandidateStatusRequest req) {
+    public CandidateResponseDto changeStatus(@PathVariable long id,
+                                             @Valid @RequestBody ChangeCandidateStatusRequestDto req) {
         return candidateService.changeStatus(id, req);
     }
 }
